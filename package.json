@@ -1,0 +1,34 @@
+{
+  "name": "mockjax-router",
+  "version": "1.0.0",
+  "description": "mock out the server-side in your browser tests",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mock",
+    "mockjax",
+    "jquery",
+    "router",
+    "karma",
+    "testing"
+  ],
+  "author": "Tim Macfarlane <timmacfarlane@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "jquery-mockjax": "^1.6.1",
+    "prote": "^1.1.0"
+  },
+  "devDependencies": {
+    "chai": "^1.10.0",
+    "jquery": "^2.1.3",
+    "karma": "^0.12.31",
+    "karma-browserify": "^3.0.1",
+    "karma-chrome-launcher": "^0.1.7",
+    "karma-cli": "0.0.4",
+    "karma-mocha": "^0.1.10",
+    "karma-mocha-reporter": "^0.3.2",
+    "mocha": "^2.1.0"
+  }
+}
