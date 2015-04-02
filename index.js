@@ -1,5 +1,7 @@
 var prototype = require('prote');
-window.jQuery = window.$ = require('jquery');
+if (!window.$) {
+  window.jQuery = window.$ = require('jquery');
+}
 require('jquery-mockjax');
 
 $.mockjaxSettings.responseTime = 0;
