@@ -1,6 +1,6 @@
 {
   "name": "mockjax-router",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "mock out the server-side in your browser tests",
   "main": "index.js",
   "scripts": {
