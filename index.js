@@ -4,9 +4,6 @@ if (!window.$) {
 }
 require('jquery-mockjax');
 
-$.mockjaxSettings.responseTime = 0;
-$.mockjaxSettings.logging = false;
-
 function route(r) {
     return new RegExp("^" + r.replace(/:[a-z0-0]+/gi, "([^/?]*)") + "(\\?(.*))?$");
 }
@@ -60,7 +57,7 @@ var routerPrototype = {};
                   || settings.contentType.match(/^application\/json\b/));
 
             var requestBody =
-              isJson
+              isJson && !(settings.data instanceof Object)
                 ? JSON.parse(settings.data)
                 : settings.data
 
@@ -84,7 +81,25 @@ var routerPrototype = {};
 
 var router = prototype(routerPrototype);
 
-module.exports = function() {
+function extend(object, extension) {
+  Object.keys(extension).forEach(function (key) {
+    if (extension[key] !== undefined) {
+      object[key] = extension[key];
+    }
+  });
+
+  return object;
+}
+
+module.exports = function(options) {
   $.mockjax.clear();
+
+  options = extend({
+    logging: false,
+    responseTime: 0
+  }, options || {});
+
+  extend($.mockjaxSettings, options);
+
   return router();
 };
