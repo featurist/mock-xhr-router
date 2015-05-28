@@ -1,4 +1,5 @@
-var prototype = require('prote');
+var debug = require('debug')('mockjax-router');
+
 if (!window.$) {
   window.jQuery = window.$ = require('jquery');
 }
@@ -43,10 +44,11 @@ function params(pattern, url) {
   return hash;
 };
 
-var routerPrototype = {};
+function Router() {
+}
 
 ["get", "delete", "head", "post", "put", "patch"].forEach(function(method) {
-  routerPrototype[method] = function(url, fn) {
+  Router.prototype[method] = function(url, fn) {
     return $.mockjax(function(settings) {
       if (settings.url.match(route(url)) && settings.type.toLowerCase() === method) {
         return {
@@ -61,13 +63,17 @@ var routerPrototype = {};
                 ? JSON.parse(settings.data)
                 : settings.data
 
-            var response = fn({
+            var request = {
               headers: settings.headers || [],
               body: requestBody,
               method: settings.type,
               url: settings.url,
               params: params(url, settings.url)
-            }) || {};
+            };
+
+            debug('request', request);
+            var response = fn(request) || {};
+            debug('response', response);
 
             this.headers = response.headers || {};
             this.status = response.statusCode || 200;
@@ -79,7 +85,9 @@ var routerPrototype = {};
   };
 });
 
-var router = prototype(routerPrototype);
+function router() {
+  return new Router();
+}
 
 function extend(object, extension) {
   Object.keys(extension).forEach(function (key) {
