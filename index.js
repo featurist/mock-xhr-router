@@ -1,12 +1,8 @@
-var debug = require('debug')('mockjax-router');
-
-if (!window.$) {
-  window.jQuery = window.$ = require('jquery');
-}
-require('jquery-mockjax');
+var debug = require('debug')('mock-xhr-router');
+var fauxjax = require('faux-jax');
 
 function route(r) {
-    return new RegExp("^" + r.replace(/:[a-z0-0]+/gi, "([^/?]*)") + "(\\?(.*))?$");
+  return new RegExp("^" + r.replace(/:[a-z0-0]+/gi, "([^/?]*)") + "(\\?(.*))?$");
 }
 
 function params(pattern, url) {
@@ -48,42 +44,41 @@ function Router() {
 }
 
 ["get", "delete", "head", "post", "put", "patch"].forEach(function(method) {
-  Router.prototype[method] = function(url, fn) {
-    return $.mockjax(function(settings) {
-      if (settings.url.match(route(url)) && settings.type.toLowerCase() === method) {
-        return {
-          response: function(settings) {
-            var isJson =
-              settings.data !== undefined
-              && (settings.dataType === "json"
-                  || settings.contentType.match(/^application\/json\b/));
+  Router.prototype[method] = function(url, handleRoute) {
+    return fauxjax.on('request', function(request) {
+      if (request.requestURL.match(route(url)) && request.requestMethod.toLowerCase() === method) {
+        debug('request', request);
+        var response = handleRoute({
+          headers: request.requestHeaders,
+          body: JSON.parse(request.requestBody),
+          method: request.requestMethod,
+          url: request.requestURL,
+          params: params(url, request.requestURL)
+        }) || {};
+        debug('response', response);
 
-            var requestBody =
-              isJson && !(settings.data instanceof Object)
-                ? JSON.parse(settings.data)
-                : settings.data
+        var headers = response.headers || {};
+        var body;
 
-            var request = {
-              headers: settings.headers || [],
-              body: requestBody,
-              method: settings.type,
-              url: settings.url,
-              params: params(url, settings.url)
-            };
+        if (response.body && response.body instanceof Object) {
+          headers['Content-Type'] = 'application/json; charset=utf-8';
+          body = JSON.stringify(response.body);
+        } else {
+          body = response.body;
+        }
 
-            debug('request', request);
-            var response = fn(request) || {};
-            debug('response', response);
-
-            this.headers = response.headers || {};
-            this.status = response.statusCode || 200;
-            return this.responseText = response.body;
-          }
-        };
+        request.respond(response.statusCode || 200, headers, body);
       }
     });
   };
 });
+
+var installed = false;
+
+Router.stop = function () {
+  fauxjax.restore();
+  installed = false;
+};
 
 function router() {
   return new Router();
@@ -100,14 +95,16 @@ function extend(object, extension) {
 }
 
 module.exports = function(options) {
-  $.mockjax.clear();
-
-  options = extend({
-    logging: false,
-    responseTime: 0
-  }, options || {});
-
-  extend($.mockjaxSettings, options);
-
+  if (!installed) {
+    fauxjax.install();
+    installed = true;
+  } else {
+    fauxjax.restore();
+    fauxjax.install();
+  }
   return router();
+};
+
+module.exports.stop = function () {
+  fauxjax.restore();
 };

@@ -1,11 +1,25 @@
 var jquery = require("jquery");
 
 function send(method, url, body) {
-  return jquery.ajax({
-    url: url,
-    type: method,
-    contentType: "application/json; charset=UTF-8",
-    data: JSON.stringify(body)
+  return new Promise(function (fulfil, reject) {
+    jquery.ajax({
+      url: url,
+      type: method,
+      contentType: "application/json; charset=UTF-8",
+      data: JSON.stringify(body),
+      success: function (data, textStatus, jqXHR) {
+        fulfil({
+          statusCode: jqXHR.status,
+          body: data
+        });
+      },
+      error: function (jqXHR, textStatus, error) {
+        reject({
+          statusCode: jqXHR.status,
+          body: jqXHR.responseJSON
+        });
+      }
+    });
   });
 }
 

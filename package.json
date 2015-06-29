@@ -1,5 +1,5 @@
 {
-  "name": "mockjax-router",
+  "name": "mock-xhr-router",
   "version": "1.1.1",
   "description": "mock out the server-side in your browser tests",
   "main": "index.js",
@@ -8,8 +8,7 @@
   },
   "keywords": [
     "mock",
-    "mockjax",
-    "jquery",
+    "xhr",
     "router",
     "karma",
     "testing"
@@ -18,7 +17,7 @@
   "license": "MIT",
   "dependencies": {
     "debug": "2.2.0",
-    "jquery-mockjax": "^1.6.1"
+    "faux-jax": "4.0.0"
   },
   "devDependencies": {
     "chai": "^1.10.0",

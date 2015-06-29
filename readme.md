@@ -1,15 +1,15 @@
-# mockjax-router
+# mock-xhr-router
 
 ```bash
-npm install mockjax-router
+npm install mock-xhr-router
 ```
 
 Build a mock API to use in your browser tests:
 
 ```js
-var mockjaxRouter = require('mockjax-router');
+var mockXhrRouter = require('mock-xhr-router');
 
-var router = mockjaxRouter();
+var router = mockXhrRouter();
 
 var users = {};
 var lastUserId = -1;
@@ -51,8 +51,8 @@ $.get('/users/1').then(function (user) {
 # api
 
 ```js
-var mockjaxRouter = require('mockjax-router');
-var router = mockjaxRouter();
+var mockXhrRouter = require('mock-xhr-router');
+var router = mockXhrRouter();
 
 router.get(path, handler);
 router.delete(path, handler);
