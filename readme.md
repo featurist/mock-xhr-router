@@ -84,3 +84,17 @@ function handler(request) {
   * `body` - the body, if a JS object, then it is transmitted as JSON. Optional.
 
 The response can be omitted too, giving a `200 OK`.
+
+## logging
+
+You can get [debug](https://github.com/visionmedia/debug) output like this:
+
+```js
+window._debug = require('debug');
+```
+
+Then in your browser console:
+
+```js
+_debug.enable('mock-xhr-router');
+```
