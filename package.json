@@ -38,10 +38,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/refractalize/mock-xhr-router.git"
+    "url": "https://github.com/featurist/mock-xhr-router.git"
   },
   "bugs": {
-    "url": "https://github.com/refractalize/mock-xhr-router/issues"
+    "url": "https://github.com/featurist/mock-xhr-router/issues"
   },
-  "homepage": "https://github.com/refractalize/mock-xhr-router"
+  "homepage": "https://github.com/featurist/mock-xhr-router"
 }
