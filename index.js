@@ -45,33 +45,61 @@ function Router() {
 
 ["get", "delete", "head", "post", "put", "patch"].forEach(function(method) {
   Router.prototype[method] = function(url, handleRoute) {
-    return fauxjax.on('request', function(request) {
-      if (request.requestURL.match(route(url)) && request.requestMethod.toLowerCase() === method) {
+    return fauxjax.on('request', function(fauxRequest) {
+      if (fauxRequest.requestURL.match(route(url)) && fauxRequest.requestMethod.toLowerCase() === method) {
+        var request = {
+          headers: fauxRequest.requestHeaders,
+          body: fauxRequest.requestBody,
+          method: fauxRequest.requestMethod,
+          url: fauxRequest.requestURL,
+          params: params(url, fauxRequest.requestURL)
+        };
+        buildRequest(request);
         debug('request', request);
-        var response = handleRoute({
-          headers: request.requestHeaders,
-          body: JSON.parse(request.requestBody),
-          method: request.requestMethod,
-          url: request.requestURL,
-          params: params(url, request.requestURL)
-        }) || {};
+        var response = handleRoute(request) || {};
+        buildResponse(response);
         debug('response', response);
 
-        var headers = response.headers || {};
-        var body;
-
-        if (response.body && response.body instanceof Object) {
-          headers['Content-Type'] = 'application/json; charset=utf-8';
-          body = JSON.stringify(response.body);
-        } else {
-          body = response.body;
-        }
-
-        request.respond(response.statusCode || 200, headers, body);
+        fauxRequest.respond(
+          response.statusCode,
+          response.headers,
+          serialiseResponseBody(response)
+        );
       }
     });
   };
 });
+
+function isJsonMimeType(mimeType) {
+  return /^application\/json($|\b)/.test(mimeType);
+}
+
+function buildRequest(request) {
+  if (isJsonMimeType(request.headers['Content-Type'])) {
+    request.body = JSON.parse(request.body);
+  }
+}
+
+function serialiseResponseBody(response) {
+  if (isJsonMimeType(response.headers['Content-Type'])) {
+    return JSON.stringify(response.body, null, 2);
+  } else {
+    return response.body;
+  }
+}
+
+function buildResponse(response) {
+  if (!response.statusCode) {
+    response.statusCode = 200;
+  }
+  if (!response.headers) {
+    response.headers = {};
+  }
+
+  if (response.body && response.body instanceof Object) {
+    response.headers['Content-Type'] = 'application/json; charset=UTF-8';
+  }
+}
 
 var installed = false;
 

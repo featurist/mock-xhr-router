@@ -2,6 +2,7 @@ var createRouter = require("..");
 var expect = require("chai").expect;
 var http = require("./http");
 var jquery = require('jquery');
+_debug = require('debug');
 
 describe("router", function() {
   it("can get JSON", function() {
