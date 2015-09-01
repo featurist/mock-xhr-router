@@ -16,7 +16,7 @@ function send(method, url, body) {
       error: function (jqXHR, textStatus, error) {
         reject({
           statusCode: jqXHR.status,
-          body: jqXHR.responseJSON
+          body: jqXHR.responseJSON || jqXHR.responseText
         });
       }
     });

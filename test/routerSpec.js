@@ -108,4 +108,44 @@ describe("router", function() {
       });
     });
   });
+
+  describe('404', function () {
+    context('when there are routes', function () {
+      beforeEach(function () {
+        var router = createRouter();
+        router.get('/', function (req) {
+          return {
+            body: 'hi'
+          };
+        });
+      });
+
+      it('responds with 404 if route not found', function () {
+        return http.get('/notfound').then(function () {
+          throw new Error('expected to get 404');
+        }, function (error) {
+          expect(error.statusCode).to.equal(404);
+          expect(error.body).to.equal('route not found: GET /notfound');
+        });
+      });
+    });
+
+    context('when there are no routes', function () {
+      beforeEach(function () {
+        var router = createRouter();
+      });
+
+      it('responds with 404 if route not found', function () {
+        try {
+          return http.get('/notfound').then(function () {
+            throw new Error('expected to get 404');
+          }, function (error) {
+            expect(error.statusCode).to.equal(404);
+            expect(error.body).to.equal('route not found: GET /notfound');
+          });
+        } catch (e) {
+        }
+      });
+    });
+  });
 });

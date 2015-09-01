@@ -27,6 +27,9 @@ module.exports = function(config) {
       '**/*.sw?'
     ],
 
+    browserify: {
+      debug: true
+    },
 
     // test results reporter to use
     // possible values: 'dots', 'progress'

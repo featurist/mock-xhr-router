@@ -1,7 +1,7 @@
 var debug = require('debug')('mock-xhr-router');
 var fauxjax = require('faux-jax');
 
-function route(r) {
+function routeRegExp(r) {
   return new RegExp("^" + r.replace(/:[a-z0-0]+/gi, "([^/?]*)") + "(\\?(.*))?$");
 }
 
@@ -19,7 +19,7 @@ function params(pattern, url) {
   }
 
   matches();
-  var routeMatch = route(pattern).exec(url);
+  var routeMatch = routeRegExp(pattern).exec(url);
   var hash = {};
 
   for (var n = 0; n < vars.length; ++n) {
@@ -41,32 +41,56 @@ function params(pattern, url) {
 };
 
 function Router() {
+  this.routes = [];
+
+  var self = this;
+
+  fauxjax.on('request', function (fauxRequest) {
+    var route = findFirst(self.routes, function (route) {
+      return fauxRequest.requestURL.match(routeRegExp(route.url)) && fauxRequest.requestMethod.toLowerCase() === route.method;
+    });
+
+    if (route) {
+      var request = {
+        headers: fauxRequest.requestHeaders,
+        body: fauxRequest.requestBody,
+        method: fauxRequest.requestMethod,
+        url: fauxRequest.requestURL,
+        params: params(route.url, fauxRequest.requestURL)
+      };
+      buildRequest(request);
+      debug('request', request);
+      var response = route.handler(request) || {};
+      buildResponse(response);
+      debug('response', response);
+
+      fauxRequest.respond(
+        response.statusCode,
+        response.headers,
+        serialiseResponseBody(response)
+      );
+    } else {
+      fauxRequest.respond(
+        404,
+        {'Content-Type': 'text/plain'},
+        'route not found: ' + fauxRequest.requestMethod + ' ' + fauxRequest.requestURL
+      );
+    }
+  });
+}
+
+function findFirst(array, filter) {
+  for(var n = 0; n < array.length; n++) {
+    var item = array[n];
+    if (filter(item)) {
+      return item;
+    }
+  }
 }
 
 ["get", "delete", "head", "post", "put", "patch"].forEach(function(method) {
-  Router.prototype[method] = function(url, handleRoute) {
-    return fauxjax.on('request', function(fauxRequest) {
-      if (fauxRequest.requestURL.match(route(url)) && fauxRequest.requestMethod.toLowerCase() === method) {
-        var request = {
-          headers: fauxRequest.requestHeaders,
-          body: fauxRequest.requestBody,
-          method: fauxRequest.requestMethod,
-          url: fauxRequest.requestURL,
-          params: params(url, fauxRequest.requestURL)
-        };
-        buildRequest(request);
-        debug('request', request);
-        var response = handleRoute(request) || {};
-        buildResponse(response);
-        debug('response', response);
-
-        fauxRequest.respond(
-          response.statusCode,
-          response.headers,
-          serialiseResponseBody(response)
-        );
-      }
-    });
+  Router.prototype[method] = function(url, handler) {
+    this.routes.push({url: url, handler: handler, method: method});
   };
 });
 
