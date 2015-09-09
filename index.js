@@ -122,17 +122,32 @@ function isJsonMimeType(mimeType) {
   return /^application\/json($|\b)/.test(mimeType);
 }
 
+function normaliseHeaders(headers) {
+  var lowHeaders = {};
+
+  var headerNames = Object.keys(headers);
+  for (var n = 0; n < headerNames.length; n++) {
+    var name = headerNames[n];
+    lowHeaders[name.toLowerCase()] = headers[name];
+  }
+
+  return lowHeaders;
+}
+
 function buildRequest(request) {
-  if (isJsonMimeType(request.headers['Content-Type'])) {
+  request.headers = normaliseHeaders(request.headers);
+  if (isJsonMimeType(request.headers['content-type'])) {
     request.body = JSON.parse(request.body);
   }
 }
 
 function serialiseResponseBody(response) {
-  if (isJsonMimeType(response.headers['Content-Type'])) {
+  if (isJsonMimeType(response.headers['content-type'])) {
     return JSON.stringify(response.body, null, 2);
   } else {
-    return response.body;
+    var body = response.body;
+
+    return body == undefined? '': body;
   }
 }
 
@@ -142,10 +157,12 @@ function buildResponse(response) {
   }
   if (!response.headers) {
     response.headers = {};
+  } else {
+    response.headers = normaliseHeaders(response.headers);
   }
 
   if (response.body && response.body instanceof Object) {
-    response.headers['Content-Type'] = 'application/json; charset=UTF-8';
+    response.headers['content-type'] = 'application/json; charset=UTF-8';
   }
 }
 
