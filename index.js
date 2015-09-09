@@ -59,11 +59,10 @@ function Router() {
         params: params(route.url, fauxRequest.requestURL)
       };
       buildRequest(request);
-      debug('request', request);
 
       function respond(response) {
         buildResponse(response);
-        debug('response', response);
+        debug(request.method.toUpperCase() + ' ' + request.url, request, response);
 
         fauxRequest.respond(
           response.statusCode,
