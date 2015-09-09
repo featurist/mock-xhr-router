@@ -72,6 +72,14 @@ function handler(request) {
 }
 ```
 
+```js
+function handler(request) {
+  return new Promise(function (fulfil) {
+    fulfil(response);
+  });
+}
+```
+
 * `request` - an object containing:
   * `method` - the method, one of `GET`, `POST`, etc.
   * `url` - the url of the resource
@@ -84,6 +92,8 @@ function handler(request) {
   * `body` - the body, if a JS object, then it is transmitted as JSON. Optional.
 
 The response can be omitted too, giving a `200 OK`.
+
+If there is an exception, or the handler returns a promise that is rejected, then it will return a 500 and a description of the error in JSON.
 
 ## logging
 

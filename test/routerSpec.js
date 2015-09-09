@@ -49,6 +49,21 @@ describe("router", function() {
     });
   });
 
+  it('catches exceptions and returns 500', function () {
+    var router = createRouter();
+
+    router.get("/", function(req) {
+      throw new Error('argh!');
+    });
+
+    return http.get("/").then(function () {
+      throw new Error('expected to return 500');
+    }, function (response) {
+      expect(response.statusCode).to.equal(500);
+      expect(response.body.message).to.eql('argh!');
+    });
+  });
+
   it("can respond with 201", function() {
     var router = createRouter();
 
@@ -105,6 +120,43 @@ describe("router", function() {
           id: "2",
           c: "3"
         }
+      });
+    });
+  });
+
+  describe('promises', function () {
+    it('responds after the promise has resolved', function () {
+      var router = createRouter();
+      router.get('/', function (req) {
+        return new Promise(function (fulfil) {
+          setTimeout(function () {
+            fulfil({
+              body: 'ho'
+            });
+          }, 100);
+        });
+      });
+
+      return http.get('/').then(function (response) {
+        expect(response.body).to.equal('ho');
+      });
+    });
+
+    it('responds with 500 if the promise is rejected', function () {
+      var router = createRouter();
+      router.get('/', function (req) {
+        return new Promise(function (fulfil, reject) {
+          setTimeout(function () {
+            reject(new Error('argh!'));
+          }, 100);
+        });
+      });
+
+      return http.get('/').then(function () {
+        throw new Error('expected to throw exception');
+      }, function (response) {
+        expect(response.statusCode).to.equal(500);
+        expect(response.body.message).to.equal('argh!');
       });
     });
   });

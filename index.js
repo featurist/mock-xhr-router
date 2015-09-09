@@ -60,15 +60,40 @@ function Router() {
       };
       buildRequest(request);
       debug('request', request);
-      var response = route.handler(request) || {};
-      buildResponse(response);
-      debug('response', response);
 
-      fauxRequest.respond(
-        response.statusCode,
-        response.headers,
-        serialiseResponseBody(response)
-      );
+      function respond(response) {
+        buildResponse(response);
+        debug('response', response);
+
+        fauxRequest.respond(
+          response.statusCode,
+          response.headers,
+          serialiseResponseBody(response)
+        );
+      }
+
+      function respondWithError(error) {
+        respond({
+          statusCode: 500,
+          body: { message: error.message, stack: error.stack }
+        });
+      }
+
+      var response, haveResponse;
+      try {
+        response = route.handler(request) || {};
+        haveResponse = true;
+      } catch (error) {
+        respondWithError(error);
+      }
+
+      if (haveResponse) {
+        if (response && typeof response.then == 'function') {
+          response.then(respond, respondWithError);
+        } else {
+          respond(response);
+        }
+      }
     } else {
       fauxRequest.respond(
         404,
