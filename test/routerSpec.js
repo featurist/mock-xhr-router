@@ -200,4 +200,45 @@ describe("router", function() {
       });
     });
   });
+
+  describe('serialisation', function () {
+    it("doesn't share objects between server and client", function () {
+      var router = createRouter();
+      var body = {
+        message: 'hi'
+      };
+
+      router.get('/', function (req) {
+        return {
+          body: body
+        };
+      });
+
+      return http.get('/').then(function (response) {
+        expect(response.body.message).to.equal('hi');
+        response.body.message = 'bye';
+      }).then(function () {
+        return http.get('/').then(function (response) {
+          expect(response.body.message).to.equal('hi');
+        });
+      });
+    });
+
+    it("doesn't share objects between client to server", function () {
+      var router = createRouter();
+
+      var body = {
+        message: 'hi'
+      };
+
+      router.post('/', function (req) {
+        expect(req.body.message).to.equal('hi');
+        req.body.message = 'bye';
+      });
+
+      return http.post('/', body).then(function (response) {
+        expect(body.message).to.equal('hi');
+      });
+    });
+  });
 });

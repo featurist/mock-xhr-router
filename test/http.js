@@ -14,10 +14,11 @@ function send(method, url, body) {
         });
       },
       error: function (jqXHR, textStatus, error) {
-        reject({
-          statusCode: jqXHR.status,
-          body: jqXHR.responseJSON || jqXHR.responseText
-        });
+        var error = new Error(method.toUpperCase() + ' ' + url + ' => ' + jqXHR.status);
+        error.statusCode = jqXHR.status;
+        error.body = jqXHR.responseJSON || jqXHR.responseText;
+
+        reject(error);
       }
     });
   });
