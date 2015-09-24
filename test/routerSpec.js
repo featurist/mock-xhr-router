@@ -241,4 +241,76 @@ describe("router", function() {
       });
     });
   });
+
+  describe('stop', function () {
+    it('can stop all pending requests by creating a new router', function () {
+      var router = createRouter();
+
+      var body = {
+        message: 'hi'
+      };
+
+      router.get('/', function (req) {
+        return new Promise(function (fulfil) {
+          setTimeout(function () {
+            fulfil({
+              body: 'hi'
+            });
+          }, 20);
+        });
+      });
+
+      var gotResponse = false;
+
+      http.get('/').then(function (response) {
+        gotResponse = true;
+      });
+
+      return wait(10).then(function () {
+        createRouter();
+
+        return wait(40).then(function () {
+          expect(gotResponse).to.be.false;
+        });
+      });
+    });
+
+    it('can stop all pending requests by calling stop', function () {
+      var router = createRouter();
+
+      var body = {
+        message: 'hi'
+      };
+
+      router.get('/', function (req) {
+        return new Promise(function (fulfil) {
+          setTimeout(function () {
+            fulfil({
+              body: 'hi'
+            });
+          }, 20);
+        });
+      });
+
+      var gotResponse = false;
+
+      http.get('/').then(function (response) {
+        gotResponse = true;
+      });
+
+      return wait(10).then(function () {
+        createRouter.stop();
+
+        return wait(40).then(function () {
+          expect(gotResponse).to.be.false;
+        });
+      });
+    });
+  });
 });
+
+function wait(n) {
+  return new Promise(function (fulfil) {
+    setTimeout(fulfil, n);
+  });
+}

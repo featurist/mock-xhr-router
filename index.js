@@ -46,6 +46,8 @@ function Router() {
   var self = this;
 
   fauxjax.on('request', function (fauxRequest) {
+    var requestVersion = version;
+
     var route = findFirst(self.routes, function (route) {
       return fauxRequest.requestURL.match(routeRegExp(route.url)) && fauxRequest.requestMethod.toLowerCase() === route.method;
     });
@@ -61,14 +63,16 @@ function Router() {
       buildRequest(request);
 
       function respond(response) {
-        buildResponse(response);
-        debug(request.method.toUpperCase() + ' ' + request.url, request, response);
+        if (requestVersion == version) {
+          buildResponse(response);
+          debug(request.method.toUpperCase() + ' ' + request.url, request, response);
 
-        fauxRequest.respond(
-          response.statusCode,
-          response.headers,
-          serialiseResponseBody(response)
-        );
+          fauxRequest.respond(
+            response.statusCode,
+            response.headers,
+            serialiseResponseBody(response)
+          );
+        }
       }
 
       function respondWithError(error) {
@@ -168,10 +172,21 @@ function buildResponse(response) {
 
 var installed = false;
 
-Router.stop = function () {
+function restore() {
+  version++;
   fauxjax.restore();
+}
+
+var version = 0;
+
+function install() {
+  fauxjax.install();
+}
+
+function stop() {
+  restore();
   installed = false;
-};
+}
 
 function router() {
   return new Router();
@@ -189,15 +204,13 @@ function extend(object, extension) {
 
 module.exports = function(options) {
   if (!installed) {
-    fauxjax.install();
+    install();
     installed = true;
   } else {
-    fauxjax.restore();
-    fauxjax.install();
+    restore();
+    install();
   }
   return router();
 };
 
-module.exports.stop = function () {
-  fauxjax.restore();
-};
+module.exports.stop = stop;
