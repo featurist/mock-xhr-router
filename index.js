@@ -65,7 +65,7 @@ function Router() {
       function respond(response) {
         if (requestVersion == version) {
           buildResponse(response);
-          debug(request.method.toUpperCase() + ' ' + request.url, request, response);
+          debug(request.method.toUpperCase() + ' ' + request.url + ' => ' + response.statusCode, request, response);
 
           fauxRequest.respond(
             response.statusCode,
