@@ -23,7 +23,7 @@ function params(pattern, url) {
   var hash = {};
 
   for (var n = 0; n < vars.length; ++n) {
-    hash[vars[n]] = routeMatch[n + 1];
+    hash[vars[n]] = decodeURIComponent(routeMatch[n + 1]);
   }
 
   var queryString = routeMatch[vars.length + 2];

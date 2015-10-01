@@ -96,6 +96,20 @@ describe("router", function() {
     });
   });
 
+  it("can get a url with spaces in the params", function(){
+    var router = createRouter();
+    router.get("/path/:name", function(req){
+      console.log(req.params.name);
+      return {
+        body: req.params.name
+      }
+    });
+
+    return http.get("/path/with%20space").then(function(response){
+      expect(response.body).to.equal('with space');
+    });
+  });
+
   it("can post JSON", function() {
     var router = createRouter();
 
