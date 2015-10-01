@@ -99,7 +99,6 @@ describe("router", function() {
   it("can get a url with spaces in the params", function(){
     var router = createRouter();
     router.get("/path/:name", function(req){
-      console.log(req.params.name);
       return {
         body: req.params.name
       }
