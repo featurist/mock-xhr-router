@@ -84,6 +84,8 @@ function handler(request) {
   * `method` - the method, one of `GET`, `POST`, etc.
   * `url` - the url of the resource
   * `params` - an object containing the parameters taken from the `path`
+  * `query` - an object containing the parameters taken from the query string
+    * *NOTE* versions 1.6 and earlier stored query parameters in the params object
   * `headers` - an object with the request headers. Headers are all normalised to lower case, so `Content-Type` becomes `content-type`.
   * `body` - body. if this was transmitted as JSON then this is parsed into a JS value.
 * `response` - an object containing the following fields.
