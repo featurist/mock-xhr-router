@@ -26,9 +26,15 @@ function params(pattern, url) {
     hash[vars[n]] = decodeURIComponent(routeMatch[n + 1]);
   }
 
-  var queryString = routeMatch[vars.length + 2];
+  return hash;
+};
 
-  if (queryString) {
+function query(url){
+  var hasQueryString = url.indexOf('?');
+  var hash = {};
+  if (hasQueryString) {
+    var queryString = url.substring(url.indexOf('?')+1);
+
     queryString.split(/&/).forEach(function(param) {
       var paramNameValue = param.split(/=/);
       var name = paramNameValue[0];
@@ -36,7 +42,6 @@ function params(pattern, url) {
       hash[name] = value;
     });
   }
-
   return hash;
 };
 
@@ -58,7 +63,8 @@ function Router() {
         body: fauxRequest.requestBody,
         method: fauxRequest.requestMethod,
         url: fauxRequest.requestURL,
-        params: params(route.url, fauxRequest.requestURL)
+        params: params(route.url, fauxRequest.requestURL),
+        query: query(fauxRequest.requestURL)
       };
       buildRequest(request);
 

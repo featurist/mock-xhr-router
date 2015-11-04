@@ -12,7 +12,8 @@ describe("router", function() {
       return {
         body: {
           route: "one",
-          params: req.params
+          params: req.params,
+          query: req.query
         }
       };
     });
@@ -22,7 +23,9 @@ describe("router", function() {
         route: "one",
         params: {
           name: "1",
-          id: "2",
+          id: "2"
+        },
+        query: {
           c: "3"
         }
       });
@@ -117,7 +120,8 @@ describe("router", function() {
         body: {
           route: "one",
           body: req.body,
-          params: req.params
+          params: req.params,
+          query: req.query
         }
       };
     });
@@ -130,7 +134,9 @@ describe("router", function() {
         },
         params: {
           name: "1",
-          id: "2",
+          id: "2"
+        },
+        query: {
           c: "3"
         }
       });
