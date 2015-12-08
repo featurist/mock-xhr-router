@@ -64,6 +64,14 @@ router.head(path, handler);
 
 * `path` - a path for the resource, usually a root relative path like `/api/users`, but could also be an absolute URL. Can contain parameters, in the form of `:paramName`, e.g. `/users/:userId`.
 
+## stop
+
+Stops all requests, any pending requests are cancelled. Useful in unit testing teardown.
+
+```js
+mockXhrRouter.stop();
+```
+
 ## handlers
 
 ```js
