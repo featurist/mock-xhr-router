@@ -259,6 +259,22 @@ describe("router", function() {
         expect(body.message).to.equal('hi');
       });
     });
+
+    it('serialises dates', function () {
+      var router = createRouter();
+
+      router.get('/', function (req) {
+        return {
+          body: {
+            date: new Date(Date.UTC(2000, 0, 1))
+          }
+        };
+      });
+
+      return http.get('/').then(function (response) {
+        expect(response.body.date).to.equal('2000-01-01T00:00:00.000Z');
+      });
+    });
   });
 
   describe('stop', function () {
