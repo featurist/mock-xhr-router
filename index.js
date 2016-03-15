@@ -190,7 +190,9 @@ function install() {
 }
 
 function stop() {
-  restore();
+  if (installed) {
+    restore();
+  }
   installed = false;
 }
 
