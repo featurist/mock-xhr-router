@@ -1,5 +1,5 @@
 var debug = require('debug')('mock-xhr-router');
-var fauxjax = require('faux-jax');
+var mock = require('xhr-mock');
 
 function routeRegExp(r) {
   return new RegExp("^" + r.replace(/:[a-z0-0]+/gi, "([^/?]*)") + "(\\?(.*))?$");
@@ -50,21 +50,21 @@ function Router() {
 
   var self = this;
 
-  fauxjax.on('request', function (fauxRequest) {
+  mock.mock(function (req, res) {
     var requestVersion = version;
 
     var route = findFirst(self.routes, function (route) {
-      return fauxRequest.requestURL.match(routeRegExp(route.url)) && fauxRequest.requestMethod.toLowerCase() === route.method;
+      return req.url().match(routeRegExp(route.url)) && req.method().toLowerCase() === route.method;
     });
 
     if (route) {
       var request = {
-        headers: fauxRequest.requestHeaders,
-        body: fauxRequest.requestBody,
-        method: fauxRequest.requestMethod,
-        url: fauxRequest.requestURL,
-        params: params(route.url, fauxRequest.requestURL),
-        query: query(fauxRequest.requestURL)
+        headers: req.headers(),
+        body: req.body(),
+        method: req.method(),
+        url: req.url(),
+        params: params(route.url, req.url()),
+        query: query(req.url())
       };
       buildRequest(request);
 
@@ -73,16 +73,15 @@ function Router() {
           buildResponse(response);
           debug(request.method.toUpperCase() + ' ' + request.url + ' => ' + response.statusCode, request, response);
 
-          fauxRequest.respond(
-            response.statusCode,
-            response.headers,
-            serialiseResponseBody(response)
-          );
+          return res
+            .status(response.statusCode)
+            .headers(response.headers)
+            .body(serialiseResponseBody(response));
         }
       }
 
       function respondWithError(error) {
-        respond({
+        return respond({
           statusCode: 500,
           body: { message: error.message, stack: error.stack }
         });
@@ -93,22 +92,21 @@ function Router() {
         response = route.handler(request) || {};
         haveResponse = true;
       } catch (error) {
-        respondWithError(error);
+        return respondWithError(error);
       }
 
       if (haveResponse) {
         if (response && typeof response.then == 'function') {
-          response.then(respond, respondWithError);
+          return response.then(respond, respondWithError);
         } else {
-          respond(response);
+          return respond(response);
         }
       }
     } else {
-      fauxRequest.respond(
-        404,
-        {'Content-Type': 'text/plain'},
-        'route not found: ' + fauxRequest.requestMethod + ' ' + fauxRequest.requestURL
-      );
+      return res
+        .status(404)
+        .header('Content-Type', 'text/plain')
+        .body('route not found: ' + req.method()+ ' ' + req.url());
     }
   });
 }
@@ -178,20 +176,20 @@ function buildResponse(response) {
 
 var installed = false;
 
-function restore() {
+function teardown() {
   version++;
-  fauxjax.restore();
+  mock.teardown();
 }
 
 var version = 0;
 
 function install() {
-  fauxjax.install();
+  mock.setup();
 }
 
 function stop() {
   if (installed) {
-    restore();
+    teardown();
   }
   installed = false;
 }
@@ -215,7 +213,7 @@ module.exports = function(options) {
     install();
     installed = true;
   } else {
-    restore();
+    teardown();
     install();
   }
   return router();
