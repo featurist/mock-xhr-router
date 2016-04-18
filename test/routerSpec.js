@@ -1,7 +1,11 @@
+var window = require('global');
+if (!window.location) {
+  window.location = { origin : 'home' };
+}
+
 var createRouter = require("..");
 var expect = require("chai").expect;
-var http = require("./http");
-var jquery = require('jquery');
+var http = require("httpism/browser");
 _debug = require('debug');
 
 describe("router", function() {
@@ -196,7 +200,7 @@ describe("router", function() {
           throw new Error('expected to get 404');
         }, function (error) {
           expect(error.statusCode).to.equal(404);
-          expect(error.body).to.equal('route not found: GET /notfound');
+          expect(error.body).to.equal('route not found: get /notfound');
         });
       });
     });
@@ -212,7 +216,7 @@ describe("router", function() {
             throw new Error('expected to get 404');
           }, function (error) {
             expect(error.statusCode).to.equal(404);
-            expect(error.body).to.equal('route not found: GET /notfound');
+            expect(error.body).to.equal('route not found: get /notfound');
           });
         } catch (e) {
         }
