@@ -98,6 +98,31 @@ function describeRouter(xhr) {
       });
     });
 
+    it('requests and responds asynchronously', function () {
+      var events = [];
+      var router = createRouter();
+
+      router.get("/", function() {
+        events.push('got request');
+        return {
+          body: 'response'
+        };
+      });
+
+      var request = http.get("/");
+      events.push('made request');
+
+      return request.then(function () {
+        events.push('got response');
+
+        expect(events).to.eql([
+          'made request',
+          'got request',
+          'got response',
+        ]);
+      });
+    });
+
     it("can respond with 201", function() {
       var router = createRouter();
 

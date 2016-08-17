@@ -7,13 +7,15 @@ module.exports = {
     var self = this;
 
     fakeXhr.prototype.onSend = function(xhr) {
-      Promise.resolve(self.onrequest({
-        method: xhr.method,
-        url: xhr.url,
-        headers: xhr.requestHeaders,
-        body: xhr.requestBody
-      })).then(function (response) {
-        xhr.respond(response.statusCode, response.headers, response.body);
+      setTimeout(function () {
+        Promise.resolve(self.onrequest({
+          method: xhr.method,
+          url: xhr.url,
+          headers: xhr.requestHeaders,
+          body: xhr.requestBody
+        })).then(function (response) {
+          xhr.respond(response.statusCode, response.headers, response.body);
+        });
       });
     };
     window.XMLHttpRequest = fakeXhr;
