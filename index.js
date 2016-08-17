@@ -63,7 +63,8 @@ function Router() {
         if (requestVersion == version && running) {
           response = response || {};
           buildResponse(response);
-          debug(xhrRequest.method.toUpperCase() + ' ' + xhrRequest.url + ' => ' + response.statusCode, xhrRequest, response);
+          debug(xhrRequest.method.toUpperCase() + ' ' + xhrRequest.url + ' => ' + response.statusCode, xhrRequest, JSON.stringify(response, null, 2));
+          response.body = serialiseResponseBody(response);
           resolve(response);
         }
       }
@@ -154,6 +155,16 @@ function buildRequest(request) {
   }
 }
 
+function serialiseResponseBody(response) {
+  if (isJsonMimeType(response.headers['Content-Type'])) {
+    return JSON.stringify(response.body, null, 2);
+  } else {
+    var body = response.body;
+
+    return body == undefined? '': body;
+  }
+}
+
 function buildResponse(response) {
   if (!response.statusCode) {
     response.statusCode = 200;
@@ -166,12 +177,10 @@ function buildResponse(response) {
 
   if (!response.body || typeof response.body === 'string') {
     response.headers['Content-Type'] = 'text/plain; charset=UTF-8';
-    response.body = response.body || '';
   }
 
   if (response.body && response.body instanceof Object) {
     response.headers['Content-Type'] = 'application/json; charset=UTF-8';
-    response.body = JSON.stringify(response.body, null, 2);
   }
 }
 
