@@ -1,5 +1,7 @@
 var debug = require('debug')('mock-xhr-router');
 
+var version = 0;
+
 function routeRegExp(r) {
   return new RegExp("^" + r.replace(/:[a-z0-0]+/gi, "([^/?]*)") + "(\\?(.*))?$");
 }
@@ -50,48 +52,54 @@ function Router() {
   var self = this;
 
   module.exports.xhr.onrequest = function (xhrRequest) {
-    var route = findFirst(self.routes, function (route) {
-      return xhrRequest.url.match(routeRegExp(route.url)) && xhrRequest.method.toLowerCase() === route.method;
-    });
+    var requestVersion = version;
 
-    function successResponse(response) {
-      response = response || {};
-      buildResponse(response);
-      debug(xhrRequest.method.toUpperCase() + ' ' + xhrRequest.url + ' => ' + response.statusCode, xhrRequest, response);
-      return response;
-    }
-
-    function errorResponse(error) {
-      return successResponse({
-        statusCode: 500,
-        headers: {'content-type': 'application/json; charset=UTF-8'},
-        body: { message: error.message, stack: error.stack }
+    return new Promise(function (resolve) {
+      var route = findFirst(self.routes, function (route) {
+        return xhrRequest.url.match(routeRegExp(route.url)) && xhrRequest.method.toLowerCase() === route.method;
       });
-    }
 
-    if (route) {
-      var request = {
-        headers: xhrRequest.headers,
-        body: xhrRequest.body,
-        method: xhrRequest.method,
-        url: xhrRequest.url,
-        params: params(route.url, xhrRequest.url),
-        query: query(xhrRequest.url)
-      };
-      buildRequest(request);
-
-      try {
-        return Promise.resolve(route.handler(request)).then(successResponse, errorResponse);
-      } catch (error) {
-        return errorResponse(error);
+      function successResponse(response) {
+        if (requestVersion == version && running) {
+          response = response || {};
+          buildResponse(response);
+          debug(xhrRequest.method.toUpperCase() + ' ' + xhrRequest.url + ' => ' + response.statusCode, xhrRequest, response);
+          resolve(response);
+        }
       }
-    } else {
-      return successResponse({
-        statusCode: 404,
-        headers: {'Content-Type': 'text/plain'},
-        body: 'route not found: ' + xhrRequest.method.toUpperCase() + ' ' + xhrRequest.url
-      });
-    }
+
+      function errorResponse(error) {
+        successResponse({
+          statusCode: 500,
+          headers: {'content-type': 'application/json; charset=UTF-8'},
+          body: { message: error.message, stack: error.stack }
+        });
+      }
+
+      if (route) {
+        var request = {
+          headers: xhrRequest.headers,
+          body: xhrRequest.body,
+          method: xhrRequest.method,
+          url: xhrRequest.url,
+          params: params(route.url, xhrRequest.url),
+          query: query(xhrRequest.url)
+        };
+        buildRequest(request);
+
+        try {
+          Promise.resolve(route.handler(request)).then(successResponse, errorResponse);
+        } catch (error) {
+          errorResponse(error);
+        }
+      } else {
+        successResponse({
+          statusCode: 404,
+          headers: {'Content-Type': 'text/plain'},
+          body: 'route not found: ' + xhrRequest.method.toUpperCase() + ' ' + xhrRequest.url
+        });
+      }
+    });
   };
 }
 
@@ -167,21 +175,22 @@ function buildResponse(response) {
   }
 }
 
-var installed = false;
+var running = false;
 
 function restore() {
   module.exports.xhr.stop();
 }
 
 function install() {
+  version++;
   module.exports.xhr.start();
 }
 
 function stop() {
-  if (installed) {
+  if (running) {
     restore();
   }
-  installed = false;
+  running = false;
 }
 
 function router() {
@@ -189,9 +198,9 @@ function router() {
 }
 
 module.exports = function() {
-  if (!installed) {
+  if (!running) {
     install();
-    installed = true;
+    running = true;
   } else {
     restore();
     install();

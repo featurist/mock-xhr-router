@@ -20,6 +20,7 @@
   "license": "MIT",
   "dependencies": {
     "debug": "2.2.0",
+    "fake-xml-http-request": "1.4.0",
     "faux-jax": "4.0.0"
   },
   "devDependencies": {
