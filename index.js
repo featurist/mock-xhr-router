@@ -1,5 +1,4 @@
 var debug = require('debug')('mock-xhr-router');
-var fauxjax = require('faux-jax');
 
 function routeRegExp(r) {
   return new RegExp("^" + r.replace(/:[a-z0-0]+/gi, "([^/?]*)") + "(\\?(.*))?$");
@@ -27,7 +26,7 @@ function params(pattern, url) {
   }
 
   return hash;
-};
+}
 
 function query(url){
   var hasQueryString = url.indexOf('?');
@@ -43,74 +42,57 @@ function query(url){
     });
   }
   return hash;
-};
+}
 
 function Router() {
   this.routes = [];
 
   var self = this;
 
-  fauxjax.on('request', function (fauxRequest) {
-    var requestVersion = version;
-
+  module.exports.xhr.onrequest = function (xhrRequest) {
     var route = findFirst(self.routes, function (route) {
-      return fauxRequest.requestURL.match(routeRegExp(route.url)) && fauxRequest.requestMethod.toLowerCase() === route.method;
+      return xhrRequest.url.match(routeRegExp(route.url)) && xhrRequest.method.toLowerCase() === route.method;
     });
+
+    function successResponse(response) {
+      response = response || {};
+      buildResponse(response);
+      debug(xhrRequest.method.toUpperCase() + ' ' + xhrRequest.url + ' => ' + response.statusCode, xhrRequest, response);
+      return response;
+    }
+
+    function errorResponse(error) {
+      return successResponse({
+        statusCode: 500,
+        headers: {'content-type': 'application/json; charset=UTF-8'},
+        body: { message: error.message, stack: error.stack }
+      });
+    }
 
     if (route) {
       var request = {
-        headers: fauxRequest.requestHeaders,
-        body: fauxRequest.requestBody,
-        method: fauxRequest.requestMethod,
-        url: fauxRequest.requestURL,
-        params: params(route.url, fauxRequest.requestURL),
-        query: query(fauxRequest.requestURL)
+        headers: xhrRequest.headers,
+        body: xhrRequest.body,
+        method: xhrRequest.method,
+        url: xhrRequest.url,
+        params: params(route.url, xhrRequest.url),
+        query: query(xhrRequest.url)
       };
       buildRequest(request);
 
-      function respond(response) {
-        if (requestVersion == version) {
-          buildResponse(response);
-          debug(request.method.toUpperCase() + ' ' + request.url + ' => ' + response.statusCode, request, response);
-
-          fauxRequest.respond(
-            response.statusCode,
-            response.headers,
-            serialiseResponseBody(response)
-          );
-        }
-      }
-
-      function respondWithError(error) {
-        respond({
-          statusCode: 500,
-          body: { message: error.message, stack: error.stack }
-        });
-      }
-
-      var response, haveResponse;
       try {
-        response = route.handler(request) || {};
-        haveResponse = true;
+        return Promise.resolve(route.handler(request)).then(successResponse, errorResponse);
       } catch (error) {
-        respondWithError(error);
-      }
-
-      if (haveResponse) {
-        if (response && typeof response.then == 'function') {
-          response.then(respond, respondWithError);
-        } else {
-          respond(response);
-        }
+        return errorResponse(error);
       }
     } else {
-      fauxRequest.respond(
-        404,
-        {'Content-Type': 'text/plain'},
-        'route not found: ' + fauxRequest.requestMethod + ' ' + fauxRequest.requestURL
-      );
+      return successResponse({
+        statusCode: 404,
+        headers: {'Content-Type': 'text/plain'},
+        body: 'route not found: ' + xhrRequest.method.toUpperCase() + ' ' + xhrRequest.url
+      });
     }
-  });
+  };
 }
 
 function findFirst(array, filter) {
@@ -132,7 +114,20 @@ function isJsonMimeType(mimeType) {
   return /^application\/json($|\b)/.test(mimeType);
 }
 
-function normaliseHeaders(headers) {
+function hyphenCaseHeaders(headers) {
+  var lowHeaders = {};
+
+  var headerNames = Object.keys(headers);
+  for (var n = 0; n < headerNames.length; n++) {
+    var name = headerNames[n];
+    var headerName = name.replace(/(^|-)([a-z])/g, function (x) { return x.toUpperCase(); });
+    lowHeaders[headerName] = headers[name];
+  }
+
+  return lowHeaders;
+}
+
+function lowerCaseHeaders(headers) {
   var lowHeaders = {};
 
   var headerNames = Object.keys(headers);
@@ -145,19 +140,9 @@ function normaliseHeaders(headers) {
 }
 
 function buildRequest(request) {
-  request.headers = normaliseHeaders(request.headers);
+  request.headers = lowerCaseHeaders(request.headers);
   if (isJsonMimeType(request.headers['content-type'])) {
     request.body = JSON.parse(request.body);
-  }
-}
-
-function serialiseResponseBody(response) {
-  if (isJsonMimeType(response.headers['content-type'])) {
-    return JSON.stringify(response.body, null, 2);
-  } else {
-    var body = response.body;
-
-    return body == undefined? '': body;
   }
 }
 
@@ -168,25 +153,28 @@ function buildResponse(response) {
   if (!response.headers) {
     response.headers = {};
   } else {
-    response.headers = normaliseHeaders(response.headers);
+    response.headers = hyphenCaseHeaders(response.headers);
+  }
+
+  if (!response.body || typeof response.body === 'string') {
+    response.headers['Content-Type'] = 'text/plain; charset=UTF-8';
+    response.body = response.body || '';
   }
 
   if (response.body && response.body instanceof Object) {
-    response.headers['content-type'] = 'application/json; charset=UTF-8';
+    response.headers['Content-Type'] = 'application/json; charset=UTF-8';
+    response.body = JSON.stringify(response.body, null, 2);
   }
 }
 
 var installed = false;
 
 function restore() {
-  version++;
-  fauxjax.restore();
+  module.exports.xhr.stop();
 }
 
-var version = 0;
-
 function install() {
-  fauxjax.install();
+  module.exports.xhr.start();
 }
 
 function stop() {
@@ -200,17 +188,7 @@ function router() {
   return new Router();
 }
 
-function extend(object, extension) {
-  Object.keys(extension).forEach(function (key) {
-    if (extension[key] !== undefined) {
-      object[key] = extension[key];
-    }
-  });
-
-  return object;
-}
-
-module.exports = function(options) {
+module.exports = function() {
   if (!installed) {
     install();
     installed = true;
@@ -222,3 +200,6 @@ module.exports = function(options) {
 };
 
 module.exports.stop = stop;
+
+module.exports.xhr = module.exports.fauxjax = require('./fauxjaxAdapter');
+module.exports.fakeXhr = require('./fakeXhrAdapter');

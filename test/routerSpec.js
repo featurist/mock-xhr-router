@@ -1,8 +1,6 @@
 var createRouter = require("..");
 var expect = require("chai").expect;
 var http = require("./http");
-var jquery = require('jquery');
-_debug = require('debug');
 
 describe("router", function() {
   it("can get JSON", function() {
@@ -35,7 +33,7 @@ describe("router", function() {
   it("can respond with 400", function() {
     var router = createRouter();
 
-    router.get("/path/:name/:id", function(req) {
+    router.get("/path/:name/:id", function() {
       return {
         statusCode: 400,
         body: {
@@ -55,7 +53,7 @@ describe("router", function() {
   it('catches exceptions and returns 500', function () {
     var router = createRouter();
 
-    router.get("/", function(req) {
+    router.get("/", function() {
       throw new Error('argh!');
     });
 
@@ -70,7 +68,7 @@ describe("router", function() {
   it("can respond with 201", function() {
     var router = createRouter();
 
-    router.get("/path/:name/:id", function(req) {
+    router.get("/path/:name/:id", function() {
       return {
         statusCode: 201,
         body: {
@@ -88,7 +86,7 @@ describe("router", function() {
   it("can get a string", function() {
     var router = createRouter();
 
-    router.get("/path/:name/:id", function(req) {
+    router.get("/path/:name/:id", function() {
       return {
         body: 'a string'
       };
@@ -146,7 +144,7 @@ describe("router", function() {
   describe('promises', function () {
     it('responds after the promise has resolved', function () {
       var router = createRouter();
-      router.get('/', function (req) {
+      router.get('/', function () {
         return new Promise(function (fulfil) {
           setTimeout(function () {
             fulfil({
@@ -163,7 +161,7 @@ describe("router", function() {
 
     it('responds with 500 if the promise is rejected', function () {
       var router = createRouter();
-      router.get('/', function (req) {
+      router.get('/', function () {
         return new Promise(function (fulfil, reject) {
           setTimeout(function () {
             reject(new Error('argh!'));
@@ -184,7 +182,7 @@ describe("router", function() {
     context('when there are routes', function () {
       beforeEach(function () {
         var router = createRouter();
-        router.get('/', function (req) {
+        router.get('/', function () {
           return {
             body: 'hi'
           };
@@ -203,19 +201,16 @@ describe("router", function() {
 
     context('when there are no routes', function () {
       beforeEach(function () {
-        var router = createRouter();
+        createRouter();
       });
 
       it('responds with 404 if route not found', function () {
-        try {
-          return http.get('/notfound').then(function () {
-            throw new Error('expected to get 404');
-          }, function (error) {
-            expect(error.statusCode).to.equal(404);
-            expect(error.body).to.equal('route not found: GET /notfound');
-          });
-        } catch (e) {
-        }
+        return http.get('/notfound').then(function () {
+          throw new Error('expected to get 404');
+        }, function (error) {
+          expect(error.statusCode).to.equal(404);
+          expect(error.body).to.equal('route not found: GET /notfound');
+        });
       });
     });
   });
@@ -227,7 +222,7 @@ describe("router", function() {
         message: 'hi'
       };
 
-      router.get('/', function (req) {
+      router.get('/', function () {
         return {
           body: body
         };
@@ -255,7 +250,7 @@ describe("router", function() {
         req.body.message = 'bye';
       });
 
-      return http.post('/', body).then(function (response) {
+      return http.post('/', body).then(function () {
         expect(body.message).to.equal('hi');
       });
     });
@@ -263,7 +258,7 @@ describe("router", function() {
     it('serialises dates', function () {
       var router = createRouter();
 
-      router.get('/', function (req) {
+      router.get('/', function () {
         return {
           body: {
             date: new Date(Date.UTC(2000, 0, 1))
@@ -281,11 +276,7 @@ describe("router", function() {
     it('can stop all pending requests by creating a new router', function () {
       var router = createRouter();
 
-      var body = {
-        message: 'hi'
-      };
-
-      router.get('/', function (req) {
+      router.get('/', function () {
         return new Promise(function (fulfil) {
           setTimeout(function () {
             fulfil({
@@ -297,7 +288,7 @@ describe("router", function() {
 
       var gotResponse = false;
 
-      http.get('/').then(function (response) {
+      http.get('/').then(function () {
         gotResponse = true;
       });
 
@@ -313,11 +304,7 @@ describe("router", function() {
     it('can stop all pending requests by calling stop', function () {
       var router = createRouter();
 
-      var body = {
-        message: 'hi'
-      };
-
-      router.get('/', function (req) {
+      router.get('/', function () {
         return new Promise(function (fulfil) {
           setTimeout(function () {
             fulfil({
@@ -329,7 +316,7 @@ describe("router", function() {
 
       var gotResponse = false;
 
-      http.get('/').then(function (response) {
+      http.get('/').then(function () {
         gotResponse = true;
       });
 
