@@ -46,6 +46,14 @@ function query(url){
   return hash;
 }
 
+function shallowClone(o) {
+  var result = {};
+
+  Object.keys(o).forEach(key => result[key] = o[key]);
+
+  return result;
+}
+
 function Router() {
   this.routes = [];
 
@@ -63,7 +71,7 @@ function Router() {
         if (requestVersion == version && running) {
           response = response || {};
           buildResponse(response);
-          debug(xhrRequest.method.toUpperCase() + ' ' + xhrRequest.url + ' => ' + response.statusCode, xhrRequest, JSON.stringify(response, null, 2));
+          debug(xhrRequest.method.toUpperCase() + ' ' + xhrRequest.url + ' => ' + response.statusCode, xhrRequest, shallowClone(response));
           response.body = serialiseResponseBody(response);
           resolve(response);
         }
