@@ -105,6 +105,40 @@ The response can be omitted too, giving a `200 OK`.
 
 If there is an exception, or the handler returns a promise that is rejected, then it will return a 500 and a description of the error in JSON.
 
+## XHR mock adapters
+
+By default mock-xhr-router will use [faux-jax](https://github.com/algolia/faux-jax), but you can use other ones too. There are two shipped with the package:
+
+* `mockXhrRouter.fauxjax` [faux-jax](https://github.com/algolia/faux-jax), the **default**.
+* `mockXhrRouter.fakeXhr` [fake-xml-http-request](https://github.com/pretenderjs/FakeXMLHttpRequest)
+
+To use them, set the `.xhr` to the one you want:
+
+```js
+var mockXhrRouter = require('mock-xhr-router');
+mockXhrRouter.xhr = mockXhrRouter.fakeXhr;
+```
+
+To write your own, write an object that contains two methods, `start` and `stop`.
+
+```js
+var myXhr = {
+  start() {
+    // this will be called by mock-xhr-router when starting a new router
+  },
+
+  stop() {
+    // this will be called by mock-xhr-router when stopping the router
+  }
+}
+```
+
+mock-xhr-router will set a `onrequest` function on that object, and should be called when a XHR request comes in, mock-xhr-router will return a promise with the response in it. The request and response objects are the same as passed to the handlers, minus the params, see above.
+
+```js
+myXhr.onrequest(request) -> Promise
+```
+
 ## logging
 
 You can get [debug](https://github.com/visionmedia/debug) output like this:
