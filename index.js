@@ -49,7 +49,9 @@ function query(url){
 function shallowClone(o) {
   var result = {};
 
-  Object.keys(o).forEach(key => result[key] = o[key]);
+  Object.keys(o).forEach(function (key) {
+    result[key] = o[key];
+  });
 
   return result;
 }
