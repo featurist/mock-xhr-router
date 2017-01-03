@@ -71,7 +71,7 @@ function Router() {
 
       function successResponse(response) {
         if (requestVersion == version && running) {
-          response = response || {};
+          response = response? shallowClone(response): {};
           buildResponse(response);
           debug(xhrRequest.method.toUpperCase() + ' ' + xhrRequest.url + ' => ' + response.statusCode, xhrRequest, shallowClone(response));
           response.body = serialiseResponseBody(response);
